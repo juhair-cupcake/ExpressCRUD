@@ -1,7 +1,7 @@
 {
-  "name": "expressCURD",
+  "name": "expressCRUD",
   "version": "1.0.0",
-  "description": "Basic CURD with express and mongodb",
+  "description": "Basic CRUD with express and mongodb",
   "main": "main.js",
   "repository": "git@github.com:Error6251/ExpressCURD.git",
   "author": "Juhair Islam <juhair98@gmail.com>",
