@@ -41,7 +41,7 @@ const todoSchema = new Schema({
   },
   comment: {
     type: String,
-    default: "Hentai",
+    default: "Just Do It!",
   },
 });
 
@@ -52,34 +52,50 @@ const DB = mongoose.model("todo", todoSchema);
 //...
 
 app.get("/", (req, res) => {
-  res.send("https://github.com/Error6251/ExpressCRUD");
+  return res.send("https://github.com/Error6251/ExpressCRUD");
 });
 
-//Show not completed result
+//Show result
 app.get("/show", (req, res) => {
-  DB.find({ done: false }).then((result) => {
-    res.send(result);
-  });
-});
-
-//show all results
-app.get("/show/all", (req, res) => {
-  DB.find().then((result) => {
-    res.send(result);
-  });
-});
-
-//show completed results
-app.get("/show/done", (req, res) => {
-  DB.find({ done: true }).then((result) => {
-    res.send(result);
-  });
+  if (req.query.filter == "done") {
+    DB.find({ done: true })
+      .sort([["endDate", -1]])
+      .then((result) => {
+        return res.send(result);
+      });
+  } else if (req.query.filter == "not-done") {
+    DB.find({ done: false })
+      .sort("endDate")
+      .then((result) => {
+        return res.send(result);
+      });
+  } else {
+    DB.find()
+      .sort("endDate")
+      .then((result) => {
+        return res.send(result);
+      });
+  }
 });
 
 //insert a value
 app.post("/new", (req, res) => {
+  //check the input is not empty
+  if (req.body.title == null && req.body.endIn == null) {
+    return res.status(400).send({
+      message: "Pls send with title & endIn",
+    });
+  } else if (req.body.title == null) {
+    return res.status(400).send({
+      message: "Pls send with a title",
+    });
+  } else if (req.body.endIn == null) {
+    return res.status(400).send({
+      message: "Pls send with a endIn",
+    });
+  }
   //calculate the end date
-  let endDate = new Date();
+  endDate = new Date();
   endDate.setDate(endDate.getDate() + Math.abs(req.body.endIn));
 
   //take the input
@@ -94,12 +110,12 @@ app.post("/new", (req, res) => {
   inp
     .save()
     .then((data) => {
-      res.send({
+      return res.send({
         message: "New Task added",
       });
     })
     .catch((err) => {
-      res.status(500).send({
+      return res.status(500).send({
         message: err.message || "Ohhh... something is wrong",
       });
     });
@@ -108,37 +124,49 @@ app.post("/new", (req, res) => {
 //update or edit a value
 app.put("/edit", (req, res) => {
   //calculate the end date
-  let endDate = new Date();
-  endDate.setDate(endDate.getDate() + Math.abs(req.body.endIn));
+  var endDate = undefined;
+  if (req.body.endIn != null) {
+    endDate = new Date();
+    endDate.setDate(endDate.getDate() + Math.abs(req.body.endIn));
+  }
 
-  // //check there is title or date
-  // if (req.body.title != null) {
-  //   title: req.body.title;
-  // }
+  var reply;
+  //check there is title or date
+  if (req.body.title != null && endDate != undefined) {
+    reply = {
+      title: req.body.title,
+      endDate: endDate,
+    };
+  } else if (req.body.titel != null) {
+    reply = {
+      title: req.body.title,
+    };
+  } else if (endDate != undefined) {
+    reply = {
+      endDate: endDate,
+    };
+  } else {
+    return res.status(400).send({
+      message: "Pls send with a title or endIn or both",
+    });
+  }
 
   //update It
-  DB.findByIdAndUpdate(
-    req.body.id,
-    {
-      title: req.body.title || "I forget the title",
-      endDate: endDate,
-    },
-    { useFindAndModify: false }
-  )
+  DB.findByIdAndUpdate(req.body.id, reply, { useFindAndModify: false })
     .then((data) => {
       if (!data) {
-        res.status(404).send({
-          message: "Error with id " + req.body.id,
+        return res.status(404).send({
+          message: "Error with id=" + req.body.id,
         });
       } else {
-        res.send({
+        return res.send({
           message: "updated " + req.body.id,
         });
       }
     })
     .catch((err) => {
-      res.status(500).send({
-        message: "Error with id " + req.body.id,
+      return res.status(500).send({
+        message: err.message || "Error with id=" + req.body.id,
       });
     });
 });
@@ -150,18 +178,18 @@ app.delete("/remove", (req, res) => {
   DB.findByIdAndRemove(id)
     .then((data) => {
       if (!data) {
-        res.status(404).send({
-          message: `Error on id=${id}.`,
+        return res.status(404).send({
+          message: `Error there is no id=${id}.`,
         });
       } else {
-        res.send({
+        return res.send({
           message: "That task is gone!",
         });
       }
     })
     .catch((err) => {
-      res.status(500).send({
-        message: "Error on id=" + id,
+      return res.status(500).send({
+        message: err.message || "Error with id=" + id,
       });
     });
 });
@@ -178,18 +206,18 @@ app.get("/done/:id", (req, res) => {
   )
     .then((data) => {
       if (!data) {
-        res.status(404).send({
-          message: "Error with id " + req.params.id,
+        return res.status(404).send({
+          message: "Error there is no id " + req.params.id,
         });
       } else {
-        res.send({
+        return res.send({
           message: "Super cO0oL, " + req.params.id + " is Done!!!",
         });
       }
     })
     .catch((err) => {
-      res.status(500).send({
-        message: "Error with id " + req.params.id,
+      return res.status(500).send({
+        message: err.message || "Error with id " + req.params.id,
       });
     });
 });
@@ -205,18 +233,18 @@ app.put("/undone/:id", (req, res) => {
   )
     .then((data) => {
       if (!data) {
-        res.status(404).send({
-          message: "Error with id " + req.params.id,
+        return res.status(404).send({
+          message: "Error there is no id=" + req.params.id,
         });
       } else {
-        res.send({
+        return res.send({
           message: "S()ooo SAaD, " + req.params.id + " is Undone",
         });
       }
     })
     .catch((err) => {
-      res.status(500).send({
-        message: "Error with id " + req.params.id,
+      return res.status(500).send({
+        message: err.message || "Error with id=" + req.params.id,
       });
     });
 });
@@ -224,6 +252,8 @@ app.put("/undone/:id", (req, res) => {
 //...
 //Turn on the system
 //...
+//send Error msg for Database
+db.on("error", console.error.bind(console, "connection error:"));
 //If database is connected
 //Then open server port
 db.once("open", function () {
@@ -231,5 +261,3 @@ db.once("open", function () {
     console.log(`Fire in the hole!!! @ http://localhost:${port}`);
   });
 });
-//send Error msg for Database
-db.on("error", console.error.bind(console, "connection error:"));

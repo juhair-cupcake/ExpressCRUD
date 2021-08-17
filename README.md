@@ -30,12 +30,9 @@ Use postman to play with the api.
 - [x] Create a entry with or without comment.
 - [ ] Update a entry with title or end date or both.
 - [x] Remove a entry by id.
-- [ ] add comment.
+- [ ] Add extra check for errors.
+- [ ] Edit comment.
 - [x] Mark as task complete or not completed( add extra time ).
-- [x] Show as done/ not done/ all data.
-- [ ] Show only one entry.
-- [ ] Show as end date shorted.
+- [x] Show as done/ not done/ all data shorted.
 - [ ] Show as end date (end in a week or end in a month or...).
-- [ ] Show due date for certain entry.
-- [ ] Show the time it took or will take.
-- [ ] Show overdue Task.
+- [ ] Show status as overdue or day I have to complete.
