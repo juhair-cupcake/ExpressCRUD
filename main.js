@@ -123,6 +123,13 @@ app.post("/new", (req, res) => {
 
 //update or edit a value
 app.put("/edit", (req, res) => {
+  //check is there Id with the input
+  if (req.body.id == null) {
+    return res.status(400).send({
+      message: "Pls send with an id",
+    });
+  }
+
   //calculate the end date
   var endDate = undefined;
   if (req.body.endIn != null) {
@@ -131,11 +138,35 @@ app.put("/edit", (req, res) => {
   }
 
   var reply;
-  //check there is title or date
-  if (req.body.title != null && endDate != undefined) {
+  //check there is title or date or comment
+  if (
+    req.body.title != null &&
+    endDate != undefined &&
+    req.body.comment != null
+  ) {
     reply = {
       title: req.body.title,
       endDate: endDate,
+      comment: req.body.comment,
+    };
+  } else if (req.body.title != null && enddate != undefined) {
+    reply = {
+      title: req.body.title,
+      enddate: enddate,
+    };
+  } else if (req.body.comment != null && enddate != undefined) {
+    reply = {
+      enddate: enddate,
+      comment: req.body.comment,
+    };
+  } else if (req.body.title != null && req.body.comment != null) {
+    reply = {
+      title: req.body.title,
+      comment: req.body.comment,
+    };
+  } else if (req.body.comment != null) {
+    reply = {
+      comment: req.body.comment,
     };
   } else if (req.body.titel != null) {
     reply = {
@@ -173,9 +204,14 @@ app.put("/edit", (req, res) => {
 
 //delete a value
 app.delete("/remove", (req, res) => {
-  const id = req.body.id;
+  //check is there Id with the input
+  if (req.body.id == null) {
+    return res.status(400).send({
+      message: "Pls send with an id",
+    });
+  }
 
-  DB.findByIdAndRemove(id)
+  DB.findByIdAndRemove(req.body.id)
     .then((data) => {
       if (!data) {
         return res.status(404).send({
@@ -196,6 +232,13 @@ app.delete("/remove", (req, res) => {
 
 //mark as done
 app.get("/done/:id", (req, res) => {
+  //check is there Id with the input
+  if (req.body.id == null) {
+    return res.status(400).send({
+      message: "Pls send with an id",
+    });
+  }
+
   DB.findByIdAndUpdate(
     req.params.id,
     {
@@ -224,10 +267,29 @@ app.get("/done/:id", (req, res) => {
 
 //mark as undone
 app.put("/undone/:id", (req, res) => {
+  //check is there Id with the input
+  if (req.body.id == null) {
+    return res.status(400).send({
+      message: "Pls send with an id",
+    });
+  }
+
+  //calculate the end date
+  var endDate = undefined;
+  if (req.body.endIn != null) {
+    endDate = new Date();
+    endDate.setDate(endDate.getDate() + Math.abs(req.body.endIn));
+  } else {
+    return res.status(400).send({
+      message: "Pls send with the day to complete",
+    });
+  }
+
   DB.findByIdAndUpdate(
     req.params.id,
     {
       done: false,
+      endDate: endDate,
     },
     { useFindAndModify: false }
   )

@@ -28,11 +28,11 @@ Use postman to play with the api.
 - [x] Connect with MongoDB.
 - [x] Create the DB.
 - [x] Create a entry with or without comment.
-- [ ] Update a entry with title or end date or both.
+- [x] Update a entry with title or end date or both.
 - [x] Remove a entry by id.
-- [ ] Add extra check for errors.
-- [ ] Edit comment.
+- [x] Edit comment.
 - [x] Mark as task complete or not completed( add extra time ).
 - [x] Show as done/ not done/ all data shorted.
 - [ ] Show as end date (end in a week or end in a month or...).
 - [ ] Show status as overdue or day I have to complete.
+- [ ] Add extra check for errors.
