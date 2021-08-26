@@ -4,7 +4,7 @@ This project is for learning Express and mongoDB. I will try to make a todo app 
 
 ## How to install!
 
-In this project I used Ubuntu 21.04 x86_64 node v12.21.0 MongoDB v4.4.8.
+In this project I used node v12.21.0 MongoDB v4.4.8.
 
 1. Install the required application, nodejs, yarn, mongodb.
 1. Download this file and install using `yarn`.
@@ -33,6 +33,9 @@ Use postman to play with the api.
 - [x] Edit comment.
 - [x] Mark as task complete or not completed( add extra time ).
 - [x] Show as done/ not done/ all data shorted.
-- [ ] Show as end date (end in a week or end in a month or...).
+- [ ] Show as end date (end in a week or end in a day).
 - [ ] Show status as overdue or day I have to complete.
 - [ ] Add extra check for errors.
+- [ ] Authenticate if user update or delete data.
+- [ ] sign in api create a token
+- [ ] Create api. JWT Packeg.Fn,Ln,Em

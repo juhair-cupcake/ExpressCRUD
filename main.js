@@ -62,18 +62,73 @@ app.get("/show", (req, res) => {
       .sort([["endDate", -1]])
       .then((result) => {
         return res.send(result);
+      })
+      .catch((err) => {
+        return res.status(500).send({
+          message: err.message || "Ohhh... something is wrong",
+        });
       });
   } else if (req.query.filter == "not-done") {
     DB.find({ done: false })
       .sort("endDate")
       .then((result) => {
         return res.send(result);
+      })
+      .catch((err) => {
+        return res.status(500).send({
+          message: err.message || "Ohhh... something is wrong",
+        });
+      });
+  } else if (req.query.filter == "today") {
+    //calculate the date
+    let today = new Date();
+    let endDate = new Date();
+    endDate.setDate(today.getDate() + 1);
+
+    DB.find({
+      endDate: {
+        $gte: today,
+        $lt: endDate,
+      },
+    })
+      .then((result) => {
+        return res.send(result);
+      })
+      .catch((err) => {
+        return res.status(500).send({
+          message: err.message || "Ohhh... something is wrong",
+        });
+      });
+  } else if (req.query.filter == "week") {
+    //calculate the date
+    let today = new Date();
+    let endDate = new Date();
+    endDate.setDate(today.getDate() + 7);
+
+    DB.find({
+      endDate: {
+        $gte: today,
+        $lt: endDate,
+      },
+    })
+      .then((result) => {
+        return res.send(result);
+      })
+      .catch((err) => {
+        return res.status(500).send({
+          message: err.message || "Ohhh... something is wrong",
+        });
       });
   } else {
     DB.find()
       .sort("endDate")
       .then((result) => {
         return res.send(result);
+      })
+      .catch((err) => {
+        return res.status(500).send({
+          message: err.message || "Ohhh... something is wrong",
+        });
       });
   }
 });
@@ -233,7 +288,7 @@ app.delete("/remove", (req, res) => {
 //mark as done
 app.get("/done/:id", (req, res) => {
   //check is there Id with the input
-  if (req.body.id == null) {
+  if (req.params.id == null) {
     return res.status(400).send({
       message: "Pls send with an id",
     });
@@ -286,7 +341,7 @@ app.put("/undone/:id", (req, res) => {
   }
 
   DB.findByIdAndUpdate(
-    req.params.id,
+    req.body.id,
     {
       done: false,
       endDate: endDate,
@@ -307,6 +362,42 @@ app.put("/undone/:id", (req, res) => {
     .catch((err) => {
       return res.status(500).send({
         message: err.message || "Error with id=" + req.params.id,
+      });
+    });
+});
+
+//Show Status
+app.get("/status/:id", (req, res) => {
+  //check is there Id with the input
+  if (req.params.id == null) {
+    return res.status(400).send({
+      message: "Pls send with an id",
+    });
+  }
+
+  DB.findById(req.params.id)
+    .then((result) => {
+      //calculate the date and show the status
+      let endDate = result.endDate;
+      let today = new Date();
+
+      if (result.done) {
+        return res.send(`You Task is completed on ${endDate} :)`);
+      } else {
+        if (endDate < today) {
+          return res.send(`You Task is Overdue ${endDate} :(`);
+        } else {
+          return res.send(
+            `You have ${
+              endDate.getDate() - today.getDate()
+            } days to complete the task`
+          );
+        }
+      }
+    })
+    .catch((err) => {
+      return res.status(500).send({
+        message: err.message || "Ohhh... something is wrong",
       });
     });
 });
