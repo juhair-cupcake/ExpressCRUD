@@ -1,6 +1,10 @@
 //initialization
 const express = require("express");
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+
+//start server
 const app = express();
 const port = process.env.PORT || 6969;
 
@@ -11,41 +15,55 @@ app.use(express.json());
 //Database
 //...
 
-//connect to database
-mongoose
-  .connect("mongodb://localhost/todo", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .catch((error) => handleError(error));
-const db = mongoose.connection;
+//Set the options for database
+let option = {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  useFindAndModify: false,
+  useCreateIndex: true,
+};
+
+//Connect to database
+const db = mongoose.createConnection("mongodb://localhost/todo", option);
+const user = mongoose.createConnection("mongodb://localhost/todoUser", option);
 
 //Create a schema
-const Schema = mongoose.Schema;
-const todoSchema = new Schema({
-  title: {
-    type: String,
-    require: true,
-  },
-  done: {
-    type: Boolean,
-    default: false,
-  },
-  startDate: {
-    type: Date,
-    default: Date.now(),
-  },
-  endDate: {
-    type: Date,
-    require: true,
-  },
-  comment: {
-    type: String,
-    default: "Just Do It!",
-  },
-});
+let DB = db.model(
+  "todo",
+  new mongoose.Schema({
+    title: {
+      type: String,
+      require: true,
+    },
+    done: {
+      type: Boolean,
+      default: false,
+    },
+    startDate: {
+      type: Date,
+      default: Date.now(),
+    },
+    endDate: {
+      type: Date,
+      require: true,
+    },
+    comment: {
+      type: String,
+      default: "Just Do It!",
+    },
+  })
+);
 
-const DB = mongoose.model("todo", todoSchema);
+//Create a schema
+let User = user.model(
+  "todoUser",
+  new mongoose.Schema({
+    name: { type: String, default: null },
+    email: { type: String, unique: true },
+    password: { type: String, require: true },
+    token: { type: String },
+  })
+);
 
 //...
 //Routes
@@ -53,6 +71,98 @@ const DB = mongoose.model("todo", todoSchema);
 
 app.get("/", (req, res) => {
   return res.send("https://github.com/Error6251/ExpressCRUD");
+});
+
+//Register new user
+app.post("/register", (req, res) => {
+  if (!req.body.email || !req.body.password || !req.body.name) {
+    return res.status(400).send("All input are required");
+  }
+
+  //Check that email is new
+  User.findOne({ email: req.body.email })
+    .then((emailFound) => {
+      return res.status(409).send("User Already Exist. Please Login");
+    })
+    .catch((err) => {
+      //Encrypt password
+      bcrypt.hash(req.body.password).then((hash) => {
+        // Create token
+        const token = jwt.sign({ email: req.body.email }, hash, {
+          expiresIn: 2 * 60,
+        });
+
+        //Create user
+        const inp = new User({
+          name: req.body.name,
+          email: req.body.email.toLowerCase(),
+          password: hash,
+          token: token,
+        });
+
+        //save it on DB
+        inp
+          .save()
+          .then((data) => {
+            return res.send({
+              message: "New user added",
+            });
+          })
+          .catch((err) => {
+            return res
+              .status(500)
+              .send(err.message + "Ohhh... something is wrong");
+          });
+      });
+    });
+});
+
+//Login
+app.post("/login", (req, res) => {
+  //check input
+  if (!req.body.email || !req.body.password) {
+    res.status(400).send("send with email & password");
+  }
+  //check email
+  User.findOne({ email: req.body.email })
+    .then((user) => {
+      bcrypt.compare(req.body.password, user.password, (err, ok) => {
+        if (err) {
+          return res.status(400).send(err + "Wrong Email or Password");
+        } else if (ok) {
+          // Create token
+          const token = jwt.sign({ email: req.body.email }, req.body.password, {
+            expiresIn: 2 * 60,
+          });
+
+          // save user token
+          User.findByIdAndUpdate(
+            user._id,
+            { token: token },
+            { useFindAndModify: false }
+          )
+            .then((data) => {
+              if (!data) {
+                return res.status(404).send({
+                  message: "Error you are wrong",
+                });
+              } else {
+                return res.send(data);
+              }
+            })
+            .catch((err) => {
+              return res.status(500).send({
+                message: err.message || "Error you are wrong",
+              });
+            });
+        } else {
+          return res.status(400).send("Wrong Email or Password");
+        }
+      });
+    })
+    .catch((err) => {
+      return res.status(400).send("Wrong Email or Password");
+    });
 });
 
 //Show result
@@ -321,7 +431,7 @@ app.get("/done/:id", (req, res) => {
 });
 
 //mark as undone
-app.put("/undone/:id", (req, res) => {
+app.put("/undone", (req, res) => {
   //check is there Id with the input
   if (req.body.id == null) {
     return res.status(400).send({
@@ -405,12 +515,11 @@ app.get("/status/:id", (req, res) => {
 //...
 //Turn on the system
 //...
-//send Error msg for Database
-db.on("error", console.error.bind(console, "connection error:"));
-//If database is connected
+//Check for error
+mongoose.connection.on("error", (err) => {
+  logError(err);
+});
 //Then open server port
-db.once("open", function () {
-  app.listen(port, () => {
-    console.log(`Fire in the hole!!! @ http://localhost:${port}`);
-  });
+app.listen(port, () => {
+  console.log(`Fire in the hole!!! @ http://localhost:${port}`);
 });
