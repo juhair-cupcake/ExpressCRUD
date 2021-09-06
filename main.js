@@ -66,6 +66,23 @@ let User = user.model(
 );
 
 //...
+//JWT auth
+//...
+const verifyToken = (req, res, next) => {
+  const token = req.headers["token"];
+
+  if (!token) {
+    return res.status(403).send("You need a JWT token for this request");
+  }
+  jwt.verify(token, "shhh", (deconde, err) => {
+    if (err) {
+      return res.status(401).send("Invalid Token");
+    }
+  });
+  return next();
+};
+
+//...
 //Routes
 //...
 
@@ -88,7 +105,7 @@ app.post("/register", (req, res) => {
       //Encrypt password
       bcrypt.hash(req.body.password).then((hash) => {
         // Create token
-        const token = jwt.sign({ email: req.body.email }, hash, {
+        const token = jwt.sign({ email: req.body.email }, "shhh", {
           expiresIn: 2 * 60,
         });
 
@@ -131,7 +148,7 @@ app.post("/login", (req, res) => {
           return res.status(400).send(err + "Wrong Email or Password");
         } else if (ok) {
           // Create token
-          const token = jwt.sign({ email: req.body.email }, req.body.password, {
+          const token = jwt.sign({ email: req.body.email }, "shhh", {
             expiresIn: 2 * 60,
           });
 
@@ -368,7 +385,7 @@ app.put("/edit", (req, res) => {
 });
 
 //delete a value
-app.delete("/remove", (req, res) => {
+app.delete("/remove", verifyToken, (req, res) => {
   //check is there Id with the input
   if (req.body.id == null) {
     return res.status(400).send({
